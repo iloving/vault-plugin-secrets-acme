@@ -1,6 +1,7 @@
 module github.com/Boostport/vault-plugin-secrets-acme/acme/sidecar
 
-go 1.22
+go 1.23.0
+
 toolchain go1.24.1
 
 require (
@@ -19,7 +20,7 @@ require (
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/distribution/reference v0.6.0 // indirect
-	github.com/docker/docker v26.1.5+incompatible // indirect
+	github.com/docker/docker v28.0.0+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/fatih/color v1.16.0 // indirect
