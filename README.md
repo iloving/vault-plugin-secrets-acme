@@ -1,15 +1,17 @@
 # Vault ACME
 [![Run tests](https://github.com/Boostport/vault-plugin-secrets-acme/actions/workflows/test.yml/badge.svg)](https://github.com/Boostport/vault-plugin-secrets-acme/actions/workflows/test.yml)
 
-Vault ACME is a [Vault](https://www.vaultproject.io/) secret engine that allow
+Vault ACME is a secrets engine plugin for [Vault](https://www.vaultproject.io/), that allows
 users and application to retrieve TLS certificates validated by an [ACME provider](https://tools.ietf.org/html/rfc8555)
-like [Let's Encrypt](https://letsencrypt.org/) without having to give each
-applications permission to modify DNS and using Vault's audit and policy systems.
+such as [Let's Encrypt](https://letsencrypt.org/).  This allows Vault to function as a centralized LetsEncrypt certificate server, letting users and applications easily and securely obtain SSL certificates.
 
-Discussion: https://github.com/hashicorp/vault/issues/4950
+This project is the latest in a succession of forks:
+* Original: https://github.com/remilapeyre/vault-acme/ (Discussed here: https://github.com/hashicorp/vault/issues/4950)
+* Forked with some updates:  https://github.com/Boostport/vault-plugin-secrets-acme
+* Forked again with more updates:  https://github.com/SierraSoftworks/vault-plugin-secrets-acme
 
 ## Download Vault ACME
-Binary releases can be downloaded at https://github.com/Boostport/vault-plugin-secrets-acme/releases.
+Binary releases can be downloaded at https://github.com/iloving/vault-plugin-secrets-acme/releases.
 
 ## Verify Binaries
 The checksum for the binaries are signed with cosign. To verify the binaries, download the following files (where
