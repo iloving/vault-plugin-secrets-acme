@@ -36,7 +36,7 @@ $ sha256sum -c vault-plugin-secrets-acme_${VERSION}_checksums.txt
 1. If you are running Vault in a docker container and MLOCK is enabled, you need to set the mlock flag for the plugin as well:
 
 ```sh
-sudo setcap cap_ipc_lock=+ep /vault/plugins/acme-plugin
+sudo setcap cap_ipc_lock=+ep /vault/plugins/vault-plugin-secrets-acme
 ```
 
 ### Registration

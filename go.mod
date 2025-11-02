@@ -42,7 +42,7 @@ require (
 	github.com/alibabacloud-go/debug v1.0.1 // indirect
 	github.com/alibabacloud-go/tea v1.3.13 // indirect
 	github.com/alibabacloud-go/tea-utils/v2 v2.0.7 // indirect
-	github.com/aliyun/credentials-go v1.4.8 // indirect
+	github.com/aliyun/credentials-go v1.4.6 // indirect
 	github.com/armon/go-metrics v0.4.1 // indirect
 	github.com/armon/go-radix v1.0.0 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.39.5 // indirect
