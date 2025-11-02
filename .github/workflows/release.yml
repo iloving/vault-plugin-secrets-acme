@@ -20,7 +20,7 @@ jobs:
     - name: Install cosign
       uses: sigstore/cosign-installer@v3
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Build and publish
       uses: goreleaser/goreleaser-action@v6
       with:
