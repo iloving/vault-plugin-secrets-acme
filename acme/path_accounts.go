@@ -188,10 +188,6 @@ func (b *backend) accountWrite(ctx context.Context, req *logical.Request, data *
 	}
 	user.Registration = reg
 
-	if err != nil {
-		return nil, fmt.Errorf("failed to create storage entry: %w", err)
-	}
-
 	b.Logger().Info("Saving account")
 	if err = user.save(ctx, req.Storage, req.Path, serverURL); err != nil {
 		return nil, err
