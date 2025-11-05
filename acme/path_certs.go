@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"crypto/x509"
+	"encoding/hex"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
@@ -157,8 +158,16 @@ func getSerialNumberFromBytes(certBytes []byte) (string, error) {
 		return "", fmt.Errorf("error while obtaining serial number: %w", err)
 	}
 
-	serialNumber := certificate.SerialNumber.String()
-	return serialNumber, nil
+	serialNumberBytes := certificate.SerialNumber.Bytes()
+	serialNumberHex := hex.EncodeToString(serialNumberBytes)
+	output := ""
+	for i := 0; i < len(serialNumberHex); i++ {
+		output += string(serialNumberHex[i])
+		if i < len(serialNumberHex)-1 && i%2 == 1 {
+			output += ":"
+		}
+	}
+	return output, nil
 }
 func (b *backend) getSecret(accountPath, cacheKey string, cert *certificate.Resource) (*logical.Response, error) {
 	// Use the helper to create the secret
