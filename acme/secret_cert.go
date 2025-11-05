@@ -42,6 +42,9 @@ func secretCert(b *backend) *framework.Secret {
 			certFieldNotAfter: {
 				Type: framework.TypeString,
 			},
+			certFieldSerial: {
+				Type: framework.TypeString,
+			},
 		},
 		Renew:  b.certRenew,
 		Revoke: b.certRevoke,

@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"regexp"
 	"strings"
@@ -146,9 +147,14 @@ func getPrivateKeyType(privateKey string) (string, error) {
 	return "", fmt.Errorf("unable to extract private key type from %q", privateKey)
 }
 func getSerialNumberFromBytes(certBytes []byte) (string, error) {
-	certificate, err := x509.ParseCertificate(certBytes)
+
+	block, _ := pem.Decode(certBytes)
+	if block == nil {
+		return "", fmt.Errorf("failed to decode certificate")
+	}
+	certificate, err := x509.ParseCertificate(block.Bytes)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("error while obtaining serial number: %w", err)
 	}
 
 	serialNumber := certificate.SerialNumber.String()
@@ -169,7 +175,7 @@ func (b *backend) getSecret(accountPath, cacheKey string, cert *certificate.Reso
 	if err != nil {
 		return nil, err
 	}
-	//serialNumber, err := getSerialNumberFromBytes(cert.Certificate)
+	serialNumber, err := getSerialNumberFromBytes(cert.Certificate)
 	if err != nil {
 		return nil, err
 	}
@@ -185,6 +191,7 @@ func (b *backend) getSecret(accountPath, cacheKey string, cert *certificate.Reso
 			certFieldExpiration:     notAfter.Unix(),
 			certFieldNotBefore:      notBefore.String(),
 			certFieldNotAfter:       notAfter.String(),
+			certFieldSerial:         serialNumber,
 		},
 		// this will be used when revoking the certificate
 		map[string]interface{}{
