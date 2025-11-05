@@ -21,7 +21,7 @@ var keyTypes = []interface{}{
 func pathAccounts(b *backend) []*framework.Path {
 	return []*framework.Path{
 		{
-			Pattern: "accounts/?$",
+			Pattern: pathStringAccounts + "/?$",
 			Operations: map[logical.Operation]framework.OperationHandler{
 				logical.ListOperation: &framework.PathOperation{
 					Callback: b.accountList,
@@ -29,7 +29,7 @@ func pathAccounts(b *backend) []*framework.Path {
 			},
 		},
 		{
-			Pattern: "accounts/" + framework.GenericNameRegex("account"),
+			Pattern: pathStringAccounts + "/" + framework.GenericNameRegex("account"),
 			Fields: map[string]*framework.FieldSchema{
 				"account": {
 					Type:     framework.TypeString,
@@ -246,7 +246,7 @@ func (b *backend) accountDelete(ctx context.Context, req *logical.Request, _ *fr
 }
 
 func (b *backend) accountList(ctx context.Context, req *logical.Request, _ *framework.FieldData) (*logical.Response, error) {
-	entries, err := req.Storage.List(ctx, "accounts/")
+	entries, err := req.Storage.List(ctx, pathStringAccounts+"/")
 	if err != nil {
 		return nil, err
 	}

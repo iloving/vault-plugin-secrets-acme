@@ -159,7 +159,7 @@ func getTestConfig(t *testing.T) (*logical.BackendConfig, logical.Backend) {
 func createAccount(t *testing.T, b logical.Backend, storage logical.Storage) {
 	req := &logical.Request{
 		Operation: logical.CreateOperation,
-		Path:      "accounts/lenstra",
+		Path:      pathStringAccounts + "/lenstra",
 		Storage:   storage,
 		Data: map[string]interface{}{
 			"server_url":              "https://localhost:14000/dir",
@@ -176,7 +176,7 @@ func createAccount(t *testing.T, b logical.Backend, storage logical.Storage) {
 func createRole(t *testing.T, b logical.Backend, storage logical.Storage) {
 	req := &logical.Request{
 		Operation: logical.CreateOperation,
-		Path:      "roles/lenstra.fr",
+		Path:      pathStringRoles + "/lenstra.fr",
 		Storage:   storage,
 		Data: map[string]interface{}{
 			"account":          "lenstra",
@@ -190,7 +190,7 @@ func createRole(t *testing.T, b logical.Backend, storage logical.Storage) {
 func createXipRole(t *testing.T, b logical.Backend, storage logical.Storage) {
 	req := &logical.Request{
 		Operation: logical.CreateOperation,
-		Path:      "roles/xip.io",
+		Path:      pathStringRoles + "/xip.io",
 		Storage:   storage,
 		Data: map[string]interface{}{
 			"account":          "lenstra",
@@ -206,7 +206,7 @@ func TestNoChallenge(t *testing.T) {
 
 	req := &logical.Request{
 		Operation: logical.CreateOperation,
-		Path:      "accounts/lenstra",
+		Path:      pathStringAccounts + "/lenstra",
 		Storage:   config.StorageView,
 		Data: map[string]interface{}{
 			"server_url":              "https://localhost:14000/dir",
@@ -220,7 +220,7 @@ func TestNoChallenge(t *testing.T) {
 
 	req = &logical.Request{
 		Operation: logical.CreateOperation,
-		Path:      "certs/lenstra.fr",
+		Path:      pathStringCerts + "/lenstra.fr",
 		Storage:   config.StorageView,
 		Data: map[string]interface{}{
 			"common_name": "sentry.lenstra.fr",
@@ -249,7 +249,7 @@ func TestHTTP01Challenge(t *testing.T) {
 
 	req := &logical.Request{
 		Operation: logical.CreateOperation,
-		Path:      "accounts/lenstra",
+		Path:      pathStringAccounts + "/lenstra",
 		Storage:   config.StorageView,
 		Data: map[string]interface{}{
 			"server_url":              "https://localhost:14000/dir",
@@ -270,7 +270,7 @@ func TestHTTP01Challenge(t *testing.T) {
 
 	req = &logical.Request{
 		Operation: logical.CreateOperation,
-		Path:      "certs/xip.io",
+		Path:      pathStringCerts + "/xip.io",
 		Storage:   config.StorageView,
 		Data: map[string]interface{}{
 			"common_name": "127.0.0.1.xip.io",
@@ -284,7 +284,7 @@ func TestTLSALPN01Challenge(t *testing.T) {
 
 	req := &logical.Request{
 		Operation: logical.CreateOperation,
-		Path:      "accounts/lenstra",
+		Path:      pathStringAccounts + "/lenstra",
 		Storage:   config.StorageView,
 		Data: map[string]interface{}{
 			"server_url":              "https://localhost:14000/dir",
@@ -305,7 +305,7 @@ func TestTLSALPN01Challenge(t *testing.T) {
 
 	req = &logical.Request{
 		Operation: logical.CreateOperation,
-		Path:      "certs/xip.io",
+		Path:      pathStringCerts + "/xip.io",
 		Storage:   config.StorageView,
 		Data: map[string]interface{}{
 			"common_name": "127.0.0.1.xip.io",
@@ -349,7 +349,7 @@ func TestRoles(t *testing.T) {
 	for _, tcase := range testCases {
 		req := &logical.Request{
 			Operation: logical.CreateOperation,
-			Path:      "roles/lenstra.fr",
+			Path:      pathStringRoles + "/lenstra.fr",
 			Storage:   config.StorageView,
 			Data:      tcase.RequestData,
 		}
@@ -359,7 +359,7 @@ func TestRoles(t *testing.T) {
 
 	req := &logical.Request{
 		Operation: logical.CreateOperation,
-		Path:      "roles/lenstra.fr",
+		Path:      pathStringRoles + "/lenstra.fr",
 		Storage:   config.StorageView,
 		Data: map[string]interface{}{
 			"account":          "lenstra",
@@ -372,7 +372,7 @@ func TestRoles(t *testing.T) {
 	// Read role
 	req = &logical.Request{
 		Operation: logical.ReadOperation,
-		Path:      "roles/lenstra.fr",
+		Path:      pathStringRoles + "/lenstra.fr",
 		Storage:   config.StorageView,
 	}
 	resp := makeRequest(t, b, req, "")
@@ -392,14 +392,14 @@ func TestRoles(t *testing.T) {
 	// Delete role
 	req = &logical.Request{
 		Operation: logical.DeleteOperation,
-		Path:      "roles/lenstra.fr",
+		Path:      pathStringRoles + "/lenstra.fr",
 		Storage:   config.StorageView,
 	}
 	makeRequest(t, b, req, "")
 
 	req = &logical.Request{
 		Operation: logical.ReadOperation,
-		Path:      "roles/lenstra.fr",
+		Path:      pathStringRoles + "/lenstra.fr",
 		Storage:   config.StorageView,
 	}
 	makeRequest(t, b, req, "This role does not exists")

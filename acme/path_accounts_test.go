@@ -71,7 +71,7 @@ func TestAccounts(t *testing.T) {
 		// Create account
 		req := &logical.Request{
 			Operation: logical.CreateOperation,
-			Path:      "accounts/lenstra",
+			Path:      pathStringAccounts + "/lenstra",
 			Storage:   config.StorageView,
 			Data:      data,
 		}
@@ -95,7 +95,7 @@ func TestAccounts(t *testing.T) {
 	data["key_type"] = "foo"
 	req := &logical.Request{
 		Operation: logical.CreateOperation,
-		Path:      "accounts/lenstra",
+		Path:      pathStringAccounts + "/lenstra",
 		Storage:   config.StorageView,
 		Data:      data,
 	}
@@ -107,7 +107,7 @@ func TestUpdateAccount(t *testing.T) {
 
 	req := &logical.Request{
 		Operation: logical.CreateOperation,
-		Path:      "accounts/lenstra",
+		Path:      pathStringAccounts + "/lenstra",
 		Storage:   config.StorageView,
 		Data: map[string]interface{}{
 			"server_url":              "https://localhost:14000/dir",
@@ -129,7 +129,7 @@ func TestDeleteAccount(t *testing.T) {
 
 	req := &logical.Request{
 		Operation: logical.CreateOperation,
-		Path:      "accounts/lenstra",
+		Path:      pathStringAccounts + "/lenstra",
 		Storage:   config.StorageView,
 		Data: map[string]interface{}{
 			"server_url":              "https://localhost:14000/dir",
@@ -153,7 +153,7 @@ func TestListAccounts(t *testing.T) {
 
 	listReq := &logical.Request{
 		Operation: logical.ListOperation,
-		Path:      "accounts",
+		Path:      pathStringAccounts,
 		Storage:   config.StorageView,
 	}
 	listResp := makeRequest(t, b, listReq, "")
@@ -161,7 +161,7 @@ func TestListAccounts(t *testing.T) {
 
 	createReq := &logical.Request{
 		Operation: logical.CreateOperation,
-		Path:      "accounts/lenstra",
+		Path:      pathStringAccounts + "/lenstra",
 		Storage:   config.StorageView,
 		Data: map[string]interface{}{
 			"server_url":              "https://localhost:14000/dir",

@@ -26,7 +26,7 @@ func getCertFromACMEProvider(ctx context.Context, logger log.Logger, req *logica
 
 	request := certificate.ObtainRequest{
 		Domains: names,
-		Bundle:  true,
+		Bundle:  false,
 	}
 
 	return client.Certificate.Obtain(request)

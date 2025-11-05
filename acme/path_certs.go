@@ -3,8 +3,10 @@ package acme
 import (
 	"context"
 	"crypto/sha256"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -16,7 +18,7 @@ import (
 
 func pathCerts(b *backend) *framework.Path {
 	return &framework.Path{
-		Pattern: "certs/" + framework.GenericNameRegex("role"),
+		Pattern: pathStringCerts + "/" + framework.GenericNameRegex("role"),
 		Fields: map[string]*framework.FieldSchema{
 			"role": {
 				Type:     framework.TypeString,
@@ -46,7 +48,7 @@ func (b *backend) certCreate(ctx context.Context, req *logical.Request, data *fr
 
 	names := getNames(data)
 
-	path := "roles/" + data.Get("role").(string)
+	path := pathStringRoles + "/" + data.Get("role").(string)
 	r, err := getRole(ctx, req.Storage, path)
 	if err != nil {
 		return nil, err
@@ -58,7 +60,7 @@ func (b *backend) certCreate(ctx context.Context, req *logical.Request, data *fr
 		return logical.ErrorResponse(err.Error()), nil
 	}
 
-	path = "accounts/" + r.Account
+	path = pathStringAccounts + "/" + r.Account
 	a, err := getAccount(ctx, req.Storage, path)
 	if err != nil {
 		return nil, err
@@ -134,7 +136,24 @@ func getCacheKey(r *role, data *framework.FieldData) (string, error) {
 
 	return fmt.Sprintf("%s%x", cachePrefix, hashedKey), nil
 }
+func getPrivateKeyType(privateKey string) (string, error) {
+	re := regexp.MustCompile(`^-----BEGIN\s+(\w+)\s+PRIVATE KEY-----`)
+	match := re.FindStringSubmatch(privateKey)
+	if len(match) > 1 {
+		return strings.ToLower(match[1]), nil
+	}
 
+	return "", fmt.Errorf("unable to extract private key type from %q", privateKey)
+}
+func getSerialNumberFromBytes(certBytes []byte) (string, error) {
+	certificate, err := x509.ParseCertificate(certBytes)
+	if err != nil {
+		return "", err
+	}
+
+	serialNumber := certificate.SerialNumber.String()
+	return serialNumber, nil
+}
 func (b *backend) getSecret(accountPath, cacheKey string, cert *certificate.Resource) (*logical.Response, error) {
 	// Use the helper to create the secret
 	b.Logger().Debug("Preparing response")
@@ -146,22 +165,33 @@ func (b *backend) getSecret(accountPath, cacheKey string, cert *certificate.Reso
 	notBefore := certs[0].NotBefore
 	notAfter := certs[0].NotAfter
 
+	privateKeyType, err := getPrivateKeyType(string(cert.PrivateKey))
+	if err != nil {
+		return nil, err
+	}
+	//serialNumber, err := getSerialNumberFromBytes(cert.Certificate)
+	if err != nil {
+		return nil, err
+	}
 	s := b.Secret(secretCertType).Response(
 		map[string]interface{}{
-			"domain":      cert.Domain,
-			"url":         cert.CertStableURL,
-			"private_key": string(cert.PrivateKey),
-			"cert":        string(cert.Certificate),
-			"issuer_cert": string(cert.IssuerCertificate),
-			"not_before":  notBefore.String(),
-			"not_after":   notAfter.String(),
+			certFieldDomain:         cert.Domain,
+			certFieldUrl:            cert.CertStableURL,
+			certFieldPrivateKey:     string(cert.PrivateKey),
+			certFieldPrivateKeyType: privateKeyType,
+			certFieldCertificate:    string(cert.Certificate),
+			certFieldIssuingCA:      string(cert.IssuerCertificate),
+			certFieldCAChain:        string(cert.IssuerCertificate),
+			certFieldExpiration:     notAfter.Unix(),
+			certFieldNotBefore:      notBefore.String(),
+			certFieldNotAfter:       notAfter.String(),
 		},
 		// this will be used when revoking the certificate
 		map[string]interface{}{
-			"account":   accountPath,
-			"cert":      string(cert.Certificate),
-			"url":       cert.CertStableURL,
-			"cache_key": cacheKey,
+			"account":            accountPath,
+			certFieldCertificate: string(cert.Certificate),
+			certFieldUrl:         cert.CertStableURL,
+			"cache_key":          cacheKey,
 		})
 
 	s.Secret.MaxTTL = time.Until(notAfter)

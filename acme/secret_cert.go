@@ -8,31 +8,38 @@ import (
 	"github.com/hashicorp/vault/sdk/logical"
 )
 
-const secretCertType = "cert"
-
 func secretCert(b *backend) *framework.Secret {
 	return &framework.Secret{
 		Type: secretCertType,
 		Fields: map[string]*framework.FieldSchema{
-			"domain": {
+			certFieldDomain: {
 				Type: framework.TypeString,
 			},
-			"url": {
+			certFieldUrl: {
 				Type: framework.TypeString,
 			},
-			"private_key": {
+			certFieldPrivateKey: {
 				Type: framework.TypeString,
 			},
-			"cert": {
+			certFieldPrivateKeyType: {
 				Type: framework.TypeString,
 			},
-			"issuer_cert": {
+			certFieldCertificate: {
 				Type: framework.TypeString,
 			},
-			"not_before": {
+			certFieldIssuingCA: {
 				Type: framework.TypeString,
 			},
-			"not_after": {
+			certFieldCAChain: {
+				Type: framework.TypeString,
+			},
+			certFieldNotBefore: {
+				Type: framework.TypeString,
+			},
+			certFieldExpiration: {
+				Type: framework.TypeInt,
+			},
+			certFieldNotAfter: {
 				Type: framework.TypeString,
 			},
 		},
@@ -84,7 +91,7 @@ func (b *backend) certRevoke(ctx context.Context, req *logical.Request, _ *frame
 		if err != nil {
 			return logical.ErrorResponse("Failed to get LEGO client."), err
 		}
-		cert := req.Secret.InternalData["cert"].(string)
+		cert := req.Secret.InternalData[certFieldCertificate].(string)
 		err = client.Certificate.Revoke([]byte(cert))
 		if err != nil {
 			return nil, fmt.Errorf("failed to revoke cert: %v", err)

@@ -11,7 +11,7 @@ import (
 func pathRoles(b *backend) []*framework.Path {
 	return []*framework.Path{
 		{
-			Pattern: "roles/?$",
+			Pattern: pathStringRoles + "/?$",
 			Operations: map[logical.Operation]framework.OperationHandler{
 				logical.ListOperation: &framework.PathOperation{
 					Callback: b.roleList,
@@ -19,7 +19,7 @@ func pathRoles(b *backend) []*framework.Path {
 			},
 		},
 		{
-			Pattern: "roles/" + framework.GenericNameRegex("role"),
+			Pattern: pathStringRoles + "/" + framework.GenericNameRegex("role"),
 			Fields: map[string]*framework.FieldSchema{
 				"account": {
 					Type:     framework.TypeString,
@@ -112,7 +112,7 @@ func (b *backend) roleDelete(ctx context.Context, req *logical.Request, _ *frame
 }
 
 func (b *backend) roleList(ctx context.Context, req *logical.Request, _ *framework.FieldData) (*logical.Response, error) {
-	entries, err := req.Storage.List(ctx, "roles/")
+	entries, err := req.Storage.List(ctx, pathStringRoles+"/")
 	if err != nil {
 		return nil, err
 	}
