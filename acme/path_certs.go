@@ -20,17 +20,17 @@ import (
 
 func pathCerts(b *backend) *framework.Path {
 	return &framework.Path{
-		Pattern: pathStringCerts + "/" + framework.GenericNameRegex("role"),
+		Pattern: pathStringCerts + "/" + framework.GenericNameRegex(paramStringRole),
 		Fields: map[string]*framework.FieldSchema{
-			"role": {
+			paramStringRole: {
 				Type:     framework.TypeString,
 				Required: true,
 			},
-			"common_name": {
+			paramStringCommonName: {
 				Type:     framework.TypeString,
 				Required: true,
 			},
-			"alternative_names": {
+			paramStringAltNames: {
 				Type: framework.TypeCommaStringSlice,
 			},
 		},
@@ -50,7 +50,7 @@ func (b *backend) certCreate(ctx context.Context, req *logical.Request, data *fr
 
 	names := getNames(data)
 
-	path := pathStringRoles + "/" + data.Get("role").(string)
+	path := pathStringRoles + "/" + data.Get(paramStringRole).(string)
 	r, err := getRole(ctx, req.Storage, path)
 	if err != nil {
 		return nil, err
@@ -190,24 +190,24 @@ func (b *backend) getSecret(accountPath, cacheKey string, cert *certificate.Reso
 	}
 	s := b.Secret(secretCertType).Response(
 		map[string]interface{}{
-			certFieldDomain:         cert.Domain,
-			certFieldUrl:            cert.CertStableURL,
-			certFieldPrivateKey:     string(cert.PrivateKey),
-			certFieldPrivateKeyType: privateKeyType,
-			certFieldCertificate:    string(cert.Certificate),
-			certFieldIssuingCA:      string(cert.IssuerCertificate),
-			certFieldCAChain:        []string{string(cert.IssuerCertificate)},
-			certFieldExpiration:     notAfter.Unix(),
-			certFieldNotBefore:      notBefore.String(),
-			certFieldNotAfter:       notAfter.String(),
-			certFieldSerial:         serialNumber,
+			secretFieldDomain:         cert.Domain,
+			secretFieldUrl:            cert.CertStableURL,
+			secretFieldPrivateKey:     string(cert.PrivateKey),
+			secretFieldPrivateKeyType: privateKeyType,
+			secretFieldCertificate:    string(cert.Certificate),
+			secretFieldIssuingCA:      string(cert.IssuerCertificate),
+			secretFieldCAChain:        []string{string(cert.IssuerCertificate)},
+			secretFieldExpiration:     notAfter.Unix(),
+			secretFieldNotBefore:      notBefore.String(),
+			secretFieldNotAfter:       notAfter.String(),
+			secretFieldSerial:         serialNumber,
 		},
 		// this will be used when revoking the certificate
 		map[string]interface{}{
-			"account":            accountPath,
-			certFieldCertificate: string(cert.Certificate),
-			certFieldUrl:         cert.CertStableURL,
-			"cache_key":          cacheKey,
+			secretFieldAccount:     accountPath,
+			secretFieldCertificate: string(cert.Certificate),
+			secretFieldUrl:         cert.CertStableURL,
+			secretFieldCacheKey:    cacheKey,
 		})
 
 	s.Secret.MaxTTL = time.Until(notAfter)
@@ -216,9 +216,9 @@ func (b *backend) getSecret(accountPath, cacheKey string, cert *certificate.Reso
 }
 
 func getNames(data *framework.FieldData) []string {
-	altNames := data.Get("alternative_names").([]string)
+	altNames := data.Get(paramStringAltNames).([]string)
 	names := make([]string, len(altNames)+1)
-	names[0] = data.Get("common_name").(string)
+	names[0] = data.Get(paramStringCommonName).(string)
 	for i, n := range altNames {
 		names[i+1] = n
 	}
@@ -227,7 +227,7 @@ func getNames(data *framework.FieldData) []string {
 }
 
 func validateNames(b logical.Backend, r *role, names []string) error {
-	b.Logger().Debug("Validate names", "role", r, "names", names)
+	b.Logger().Debug("Validate names", paramStringRole, r, "names", names)
 
 	isSubdomain := func(domain, root string) bool {
 		return strings.HasSuffix(domain, "."+root)

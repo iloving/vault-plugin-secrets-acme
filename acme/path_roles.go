@@ -19,25 +19,25 @@ func pathRoles(b *backend) []*framework.Path {
 			},
 		},
 		{
-			Pattern: pathStringRoles + "/" + framework.GenericNameRegex("role"),
+			Pattern: pathStringRoles + "/" + framework.GenericNameRegex(paramStringRole),
 			Fields: map[string]*framework.FieldSchema{
-				"account": {
+				paramStringAccount: {
 					Type:     framework.TypeString,
 					Required: true,
 				},
-				"allowed_domains": {
+				paramStringAllowedDomains: {
 					Type: framework.TypeCommaStringSlice,
 				},
-				"allow_bare_domains": {
+				paramStringAllowBareDomains: {
 					Type: framework.TypeBool,
 				},
-				"allow_subdomains": {
+				paramStringAllowSubdomains: {
 					Type: framework.TypeBool,
 				},
-				"disable_cache": {
+				paramStringDisableCache: {
 					Type: framework.TypeBool,
 				},
-				"cache_for_ratio": {
+				paramStringCacheForRatio: {
 					Type:    framework.TypeInt,
 					Default: 70,
 				},
@@ -66,17 +66,17 @@ func (b *backend) roleCreateOrUpdate(ctx context.Context, req *logical.Request, 
 		return nil, err
 	}
 
-	cacheForRatio := data.Get("cache_for_ratio").(int)
+	cacheForRatio := data.Get(paramStringCacheForRatio).(int)
 	if cacheForRatio <= 0 || cacheForRatio > 100 {
 		return logical.ErrorResponse("cache_for_ration should be greater than 0 and less than 100"), nil
 	}
 
 	r := role{
-		Account:          data.Get("account").(string),
-		AllowedDomains:   data.Get("allowed_domains").([]string),
-		AllowBareDomains: data.Get("allow_bare_domains").(bool),
-		AllowSubdomains:  data.Get("allow_subdomains").(bool),
-		DisableCache:     data.Get("disable_cache").(bool),
+		Account:          data.Get(paramStringAccount).(string),
+		AllowedDomains:   data.Get(paramStringAllowedDomains).([]string),
+		AllowBareDomains: data.Get(paramStringAllowBareDomains).(bool),
+		AllowSubdomains:  data.Get(paramStringAllowSubdomains).(bool),
+		DisableCache:     data.Get(paramStringDisableCache).(bool),
 		CacheForRatio:    cacheForRatio,
 	}
 	if err := r.save(ctx, req.Storage, req.Path); err != nil {
@@ -97,12 +97,12 @@ func (b *backend) roleRead(ctx context.Context, req *logical.Request, _ *framewo
 
 	return &logical.Response{
 		Data: map[string]interface{}{
-			"account":            r.Account,
-			"allowed_domains":    r.AllowedDomains,
-			"allow_bare_domains": r.AllowBareDomains,
-			"allow_subdomains":   r.AllowSubdomains,
-			"disable_cache":      r.DisableCache,
-			"cache_for_ratio":    r.CacheForRatio,
+			paramStringAccount:          r.Account,
+			paramStringAllowedDomains:   r.AllowedDomains,
+			paramStringAllowBareDomains: r.AllowBareDomains,
+			paramStringAllowSubdomains:  r.AllowSubdomains,
+			paramStringDisableCache:     r.DisableCache,
+			paramStringCacheForRatio:    r.CacheForRatio,
 		},
 	}, nil
 }

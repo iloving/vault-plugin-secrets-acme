@@ -29,9 +29,9 @@ func pathAccounts(b *backend) []*framework.Path {
 			},
 		},
 		{
-			Pattern: pathStringAccounts + "/" + framework.GenericNameRegex("account"),
+			Pattern: pathStringAccounts + "/" + framework.GenericNameRegex(paramStringAccount),
 			Fields: map[string]*framework.FieldSchema{
-				"account": {
+				paramStringAccount: {
 					Type:     framework.TypeString,
 					Required: true,
 				},

@@ -40,8 +40,8 @@ func newVaultTLSALPN01Provider(ctx context.Context, logger log.Logger, req *logi
 func (p vaultProvider) Present(domain, token, keyAuth string) error {
 	path := p.getPath(domain, token, keyAuth)
 	storageEntry, err := logical.StorageEntryJSON(path, map[string]interface{}{
-		"domain": domain,
-		"key":    keyAuth,
+		paramStringDomain: domain,
+		"key":             keyAuth,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create storage entry: %v", err)

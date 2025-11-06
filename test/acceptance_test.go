@@ -17,6 +17,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// paramStrings
+const paramStringDomain = "domain"
+const paramStringRole = "role"
+const paramStringAccount = "account"
+const paramStringCommonName = "common_name"
+const paramStringAllowedDomains = "allowed_domains"
+const paramStringAllowBareDomains = "allow_bare_domains"
+const paramStringAllowSubdomains = "allow_subdomains"
+const paramStringDisableCache = "disable_cache"
+const paramStringCacheForRatio = "cache_for_ratio"
+const paramStringAltNames = "alternative_names"
+
 func TestVault(t *testing.T) {
 	if err := os.Setenv("LEGO_CA_CERTIFICATES", "./certs/pebble.minica.pem"); err != nil {
 		t.Fatal(err)
@@ -132,10 +144,10 @@ func TestVault(t *testing.T) {
 	_, err = logical.Write(
 		"acme/roles/lenstra.fr",
 		map[string]interface{}{
-			"account":            "lenstra",
-			"allowed_domains":    "lenstra.fr",
-			"allow_bare_domains": false,
-			"allow_subdomains":   true,
+			paramStringAccount:          "lenstra",
+			paramStringAllowedDomains:   "lenstra.fr",
+			paramStringAllowBareDomains: false,
+			paramStringAllowSubdomains:  true,
 		},
 	)
 	require.NoError(t, err)
@@ -144,7 +156,7 @@ func TestVault(t *testing.T) {
 	_, err = logical.Write(
 		"acme/certs/lenstra.fr",
 		map[string]interface{}{
-			"common_name": "www.lenstra.fr",
+			paramStringCommonName: "www.lenstra.fr",
 		},
 	)
 	require.NoError(t, err)
@@ -153,7 +165,7 @@ func TestVault(t *testing.T) {
 	secret, err := logical.Write(
 		"acme/certs/lenstra.fr",
 		map[string]interface{}{
-			"common_name": "lease.lenstra.fr",
+			paramStringCommonName: "lease.lenstra.fr",
 		},
 	)
 	require.NoError(t, err)
@@ -175,7 +187,7 @@ func TestVault(t *testing.T) {
 	secret, err = logical.Write(
 		"acme/certs/lenstra.fr",
 		map[string]interface{}{
-			"common_name": "lease.lenstra.fr",
+			paramStringCommonName: "lease.lenstra.fr",
 		},
 	)
 	require.NoError(t, err)

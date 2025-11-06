@@ -34,7 +34,7 @@ func TestListRoles(t *testing.T) {
 		Path:      pathStringRoles + "/lenstra",
 		Storage:   config.StorageView,
 		Data: map[string]interface{}{
-			"account": "lenstra",
+			paramStringAccount: "lenstra",
 		},
 	}, "")
 
