@@ -31,7 +31,7 @@ func secretCert(b *backend) *framework.Secret {
 				Type: framework.TypeString,
 			},
 			certFieldCAChain: {
-				Type: framework.TypeString,
+				Type: framework.TypeStringSlice,
 			},
 			certFieldNotBefore: {
 				Type: framework.TypeString,

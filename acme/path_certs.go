@@ -196,7 +196,7 @@ func (b *backend) getSecret(accountPath, cacheKey string, cert *certificate.Reso
 			certFieldPrivateKeyType: privateKeyType,
 			certFieldCertificate:    string(cert.Certificate),
 			certFieldIssuingCA:      string(cert.IssuerCertificate),
-			certFieldCAChain:        string(cert.IssuerCertificate),
+			certFieldCAChain:        []string{string(cert.IssuerCertificate)},
 			certFieldExpiration:     notAfter.Unix(),
 			certFieldNotBefore:      notBefore.String(),
 			certFieldNotAfter:       notAfter.String(),
