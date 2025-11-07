@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	//	"github.com/ctx42/testing/pkg/dump"
+
 	"github.com/go-acme/lego/v4/certcrypto"
 	"github.com/go-acme/lego/v4/certificate"
 	"github.com/hashicorp/vault/sdk/framework"
@@ -33,6 +35,18 @@ func pathCerts(b *backend) *framework.Path {
 			paramStringAltNames: {
 				Type: framework.TypeCommaStringSlice,
 			},
+			paramStringIPSANS: {
+				Type: framework.TypeCommaStringSlice,
+			},
+			paramStringURISANS: {
+				Type: framework.TypeCommaStringSlice,
+			},
+			paramStringTTL: {
+				Type: framework.TypeString,
+			},
+			paramStringCSR: {
+				Type: framework.TypeString,
+			},
 		},
 		ExistenceCheck: b.pathExistenceCheck,
 		Operations: map[logical.Operation]framework.OperationHandler{
@@ -47,9 +61,6 @@ func (b *backend) certCreate(ctx context.Context, req *logical.Request, data *fr
 	if err := data.Validate(); err != nil {
 		return nil, err
 	}
-
-	names := getNames(data)
-
 	path := pathStringRoles + "/" + data.Get(paramStringRole).(string)
 	r, err := getRole(ctx, req.Storage, path)
 	if err != nil {
@@ -57,9 +68,6 @@ func (b *backend) certCreate(ctx context.Context, req *logical.Request, data *fr
 	}
 	if r == nil {
 		return logical.ErrorResponse("This role does not exists."), nil
-	}
-	if err = validateNames(b, r, names); err != nil {
-		return logical.ErrorResponse(err.Error()), nil
 	}
 
 	path = pathStringAccounts + "/" + r.Account
@@ -70,7 +78,21 @@ func (b *backend) certCreate(ctx context.Context, req *logical.Request, data *fr
 	if a == nil {
 		return logical.ErrorResponse("This account does not exists"), nil
 	}
+	//b.Logger().Trace("Data received for certificate creation: " + dump.Any(data))
+
+	if v, ok := data.GetOk(paramStringIPSANS); ok {
+		if arr, _ := v.([]string); len(arr) > 0 {
+			return logical.ErrorResponse("ip_sans and uri_sans are not supported"), nil
+		}
+	}
+	if v, ok := data.GetOk(paramStringURISANS); ok {
+		if arr, _ := v.([]string); len(arr) > 0 {
+			return logical.ErrorResponse("ip_sans and uri_sans are not supported"), nil
+		}
+	}
+
 	// Lookup cache
+	b.Logger().Trace("Generating cache key")
 	cacheKey, err := getCacheKey(r, data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get cache key: %v", err)
@@ -94,12 +116,16 @@ func (b *backend) certCreate(ctx context.Context, req *logical.Request, data *fr
 		}
 	}
 
-	// If we did not find a cert, we have to request one
 	if cert == nil {
-		b.Logger().Debug("Contacting the ACME provider to get a new certificate")
-		cert, err = getCertFromACMEProvider(ctx, b.Logger(), req, a, names)
+		_, hasCSR := data.GetOk(paramStringCSR)
+		if hasCSR {
+			b.Logger().Info("CSR found, using it to create the certificate.  Ignoring alt_names and common_name.")
+			cert, err = b.certCreateFromCSR(ctx, req, data, r, a)
+		} else {
+			cert, err = b.certCreateDefault(ctx, req, data, r, a)
+		}
 		if err != nil {
-			return logical.ErrorResponse("Failed to validate certificate signing request: %s", err), err
+			return logical.ErrorResponse(err.Error()), nil
 		}
 		// Save the cert in the cache for the next request
 		if !r.DisableCache {
@@ -117,7 +143,70 @@ func (b *backend) certCreate(ctx context.Context, req *logical.Request, data *fr
 
 	return s, nil
 }
+func (b *backend) certCreateDefault(ctx context.Context, req *logical.Request, data *framework.FieldData, r *role, a *account) (*certificate.Resource, error) {
+	var err error
 
+	b.Logger().Trace("Compiling a list of hostnames for the certificate")
+	names := getNames(data)
+	//b.Logger().Trace("Validating names: " + dump.Any(names))
+	b.Logger().Trace("Validating names: " + strings.Join(names, ","))
+	if err = validateNames(b, r, names); err != nil {
+		return nil, err
+	}
+
+	b.Logger().Debug("Contacting the ACME provider to get a new certificate")
+
+	cert, err := getCertFromACMEProvider(ctx, b.Logger(), req, a, names, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get a new certificate: %w", err)
+	}
+
+	return cert, nil
+
+}
+func (b *backend) certCreateFromCSR(ctx context.Context, req *logical.Request, data *framework.FieldData, r *role, a *account) (*certificate.Resource, error) {
+	var err error
+	var certificateRequest *x509.CertificateRequest
+	var cert *certificate.Resource
+	b.Logger().Trace("Obtaining certificate from ACME provider")
+	csrData, hasCSR := data.GetOk(paramStringCSR)
+	if !hasCSR {
+		return nil, fmt.Errorf("somehow CSR data vanished")
+	}
+	certificateRequest, err = b.convertCSRDataToCertificateRequest([]byte(csrData.(string)))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing the CSR data: %w", err)
+	}
+
+	b.Logger().Trace("Extracting names from CSR")
+	names := getNamesFromCR(certificateRequest)
+	if err = validateNames(b, r, names); err != nil {
+		return nil, fmt.Errorf("error validating names: %w", err)
+	}
+
+	// If we did not find a cert, we have to request one
+	b.Logger().Debug("Contacting the ACME provider to get a new certificate")
+
+	cert, err = getCertFromACMEProvider(ctx, b.Logger(), req, a, names, certificateRequest)
+	if err != nil {
+		return nil, fmt.Errorf("error signing CSR: %w", err)
+	}
+	// Save the cert in the cache for the next request
+
+	return cert, nil
+}
+func (b *backend) convertCSRDataToCertificateRequest(csrData []byte) (*x509.CertificateRequest, error) {
+	block, _ := pem.Decode(csrData)
+	if block == nil {
+		return nil, fmt.Errorf("failed to decode certificate")
+	}
+	// Parse the CSR string into a CertificateRequest object
+	certificateRequest, err := x509.ParseCertificateRequest(block.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse CSR: %w", err)
+	}
+	return certificateRequest, nil
+}
 func getCacheKey(r *role, data *framework.FieldData) (string, error) {
 	rolePath, err := json.Marshal(r)
 	if err != nil {
@@ -138,7 +227,8 @@ func getCacheKey(r *role, data *framework.FieldData) (string, error) {
 
 	return fmt.Sprintf("%s%x", cachePrefix, hashedKey), nil
 }
-func getPrivateKeyType(privateKey string) (string, error) {
+
+func (b *backend) getPrivateKeyType(privateKey string) (string, error) {
 	re := regexp.MustCompile(`^-----BEGIN\s+(\w+)\s+PRIVATE KEY-----`)
 	match := re.FindStringSubmatch(privateKey)
 	if len(match) > 1 {
@@ -147,17 +237,25 @@ func getPrivateKeyType(privateKey string) (string, error) {
 
 	return "", fmt.Errorf("unable to extract private key type from %q", privateKey)
 }
-func getSerialNumberFromBytes(certBytes []byte) (string, error) {
 
+func (b *backend) getCertificateFromBytes(certBytes []byte) (*x509.Certificate, error) {
 	block, _ := pem.Decode(certBytes)
 	if block == nil {
-		return "", fmt.Errorf("failed to decode certificate")
+		return nil, fmt.Errorf("failed to decode certificate")
 	}
 	certificate, err := x509.ParseCertificate(block.Bytes)
 	if err != nil {
-		return "", fmt.Errorf("error while obtaining serial number: %w", err)
+		return nil, fmt.Errorf("error while obtaining serial number: %w", err)
 	}
+	return certificate, nil
+}
 
+func (b *backend) getSerialNumberFromCertificate(certBytes []byte) (string, error) {
+
+	certificate, err := b.getCertificateFromBytes(certBytes)
+	if err != nil {
+		return "", err
+	}
 	serialNumberBytes := certificate.SerialNumber.Bytes()
 	serialNumberHex := hex.EncodeToString(serialNumberBytes)
 	output := ""
@@ -169,7 +267,10 @@ func getSerialNumberFromBytes(certBytes []byte) (string, error) {
 	}
 	return output, nil
 }
+
 func (b *backend) getSecret(accountPath, cacheKey string, cert *certificate.Resource) (*logical.Response, error) {
+	var err error
+	var privateKeyType string
 	// Use the helper to create the secret
 	b.Logger().Debug("Preparing response")
 	certs, err := certcrypto.ParsePEMBundle(cert.Certificate)
@@ -180,11 +281,14 @@ func (b *backend) getSecret(accountPath, cacheKey string, cert *certificate.Reso
 	notBefore := certs[0].NotBefore
 	notAfter := certs[0].NotAfter
 
-	privateKeyType, err := getPrivateKeyType(string(cert.PrivateKey))
-	if err != nil {
-		return nil, err
+	privateKeyType = ""
+	if cert.PrivateKey != nil {
+		privateKeyType, err = b.getPrivateKeyType(string(cert.PrivateKey))
+		if err != nil {
+			return nil, err
+		}
 	}
-	serialNumber, err := getSerialNumberFromBytes(cert.Certificate)
+	serialNumber, err := b.getSerialNumberFromCertificate(cert.Certificate)
 	if err != nil {
 		return nil, err
 	}
@@ -220,6 +324,15 @@ func getNames(data *framework.FieldData) []string {
 	names := make([]string, len(altNames)+1)
 	names[0] = data.Get(paramStringCommonName).(string)
 	for i, n := range altNames {
+		names[i+1] = n
+	}
+
+	return names
+}
+func getNamesFromCR(cr *x509.CertificateRequest) []string {
+	names := make([]string, len(cr.DNSNames)+1)
+	names[0] = cr.Subject.CommonName
+	for i, n := range cr.DNSNames {
 		names[i+1] = n
 	}
 
