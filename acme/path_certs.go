@@ -125,7 +125,7 @@ func (b *backend) certCreate(ctx context.Context, req *logical.Request, data *fr
 			cert, err = b.certCreateDefault(ctx, req, data, r, a)
 		}
 		if err != nil {
-			return logical.ErrorResponse(err.Error()), nil
+			return logical.ErrorResponse("certificate request failed: %s", err), err
 		}
 		// Save the cert in the cache for the next request
 		if !r.DisableCache {
