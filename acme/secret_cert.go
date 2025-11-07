@@ -8,31 +8,41 @@ import (
 	"github.com/hashicorp/vault/sdk/logical"
 )
 
-const secretCertType = "cert"
-
 func secretCert(b *backend) *framework.Secret {
 	return &framework.Secret{
 		Type: secretCertType,
 		Fields: map[string]*framework.FieldSchema{
-			"domain": {
+			secretFieldDomain: {
 				Type: framework.TypeString,
 			},
-			"url": {
+			secretFieldUrl: {
 				Type: framework.TypeString,
 			},
-			"private_key": {
+			secretFieldPrivateKey: {
 				Type: framework.TypeString,
 			},
-			"cert": {
+			secretFieldPrivateKeyType: {
 				Type: framework.TypeString,
 			},
-			"issuer_cert": {
+			secretFieldCertificate: {
 				Type: framework.TypeString,
 			},
-			"not_before": {
+			secretFieldIssuingCA: {
 				Type: framework.TypeString,
 			},
-			"not_after": {
+			secretFieldCAChain: {
+				Type: framework.TypeStringSlice,
+			},
+			secretFieldNotBefore: {
+				Type: framework.TypeString,
+			},
+			secretFieldExpiration: {
+				Type: framework.TypeInt,
+			},
+			secretFieldNotAfter: {
+				Type: framework.TypeString,
+			},
+			secretFieldSerial: {
 				Type: framework.TypeString,
 			},
 		},
@@ -51,7 +61,7 @@ func (b *backend) certRenew(_ context.Context, req *logical.Request, _ *framewor
 func (b *backend) certRevoke(ctx context.Context, req *logical.Request, _ *framework.FieldData) (*logical.Response, error) {
 	b.cache.Lock()
 	defer b.cache.Unlock()
-	cacheKey := req.Secret.InternalData["cache_key"].(string)
+	cacheKey := req.Secret.InternalData[secretFieldCacheKey].(string)
 
 	ce, err := b.cache.Read(ctx, req.Storage, nil, cacheKey)
 	if err != nil {
@@ -72,7 +82,7 @@ func (b *backend) certRevoke(ctx context.Context, req *logical.Request, _ *frame
 			return nil, fmt.Errorf("failed to remove cache entry: %v", err)
 		}
 
-		accountPath := req.Secret.InternalData["account"].(string)
+		accountPath := req.Secret.InternalData[paramStringAccount].(string)
 		a, err := getAccount(ctx, req.Storage, accountPath)
 		if err != nil {
 			return nil, err
@@ -84,7 +94,7 @@ func (b *backend) certRevoke(ctx context.Context, req *logical.Request, _ *frame
 		if err != nil {
 			return logical.ErrorResponse("Failed to get LEGO client."), err
 		}
-		cert := req.Secret.InternalData["cert"].(string)
+		cert := req.Secret.InternalData[secretFieldCertificate].(string)
 		err = client.Certificate.Revoke([]byte(cert))
 		if err != nil {
 			return nil, fmt.Errorf("failed to revoke cert: %v", err)

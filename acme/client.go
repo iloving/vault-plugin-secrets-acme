@@ -2,6 +2,7 @@ package acme
 
 import (
 	"context"
+	"crypto/x509"
 	"fmt"
 	"os"
 
@@ -13,7 +14,7 @@ import (
 	"github.com/hashicorp/vault/sdk/logical"
 )
 
-func getCertFromACMEProvider(ctx context.Context, logger log.Logger, req *logical.Request, a *account, names []string) (*certificate.Resource, error) {
+func getCertFromACMEProvider(ctx context.Context, logger log.Logger, req *logical.Request, a *account, names []string, csr *x509.CertificateRequest) (*certificate.Resource, error) {
 	client, err := a.getClient()
 	if err != nil {
 		return nil, err
@@ -24,12 +25,20 @@ func getCertFromACMEProvider(ctx context.Context, logger log.Logger, req *logica
 		return nil, err
 	}
 
-	request := certificate.ObtainRequest{
-		Domains: names,
-		Bundle:  true,
-	}
+	if csr != nil {
+		csr_request := certificate.ObtainForCSRRequest{
+			CSR:    csr,
+			Bundle: false,
+		}
+		return client.Certificate.ObtainForCSR(csr_request)
+	} else {
+		request := certificate.ObtainRequest{
+			Domains: names,
+			Bundle:  false,
+		}
 
-	return client.Certificate.Obtain(request)
+		return client.Certificate.Obtain(request)
+	}
 }
 
 func setupChallengeProviders(ctx context.Context, logger log.Logger, client *lego.Client, a *account, req *logical.Request) error {

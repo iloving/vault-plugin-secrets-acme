@@ -36,7 +36,7 @@ func TestExplicitProviderConfiguration(t *testing.T) {
 	config, b := getTestConfig(t)
 	req := &logical.Request{
 		Operation: logical.CreateOperation,
-		Path:      "accounts/lenstra",
+		Path:      pathStringAccounts + "/lenstra",
 		Storage:   config.StorageView,
 		Data: map[string]interface{}{
 			"server_url":              "https://localhost:14000/dir",
@@ -59,7 +59,7 @@ func TestExplicitProviderConfiguration(t *testing.T) {
 		Operation: logical.CreateOperation,
 		Path:      "certs/lenstra.fr",
 		Storage:   config.StorageView,
-		Data:      map[string]interface{}{"common_name": "sentry.lenstra.fr"},
+		Data:      map[string]interface{}{paramStringCommonName: "sentry.lenstra.fr"},
 	}
 	resp, err := b.HandleRequest(context.Background(), req)
 	require.Error(t, err, "fork/exec /dev/null: permission denied")
@@ -73,7 +73,7 @@ func checkCreatingCerts(t *testing.T, b logical.Backend, storage logical.Storage
 		Operation: logical.CreateOperation,
 		Path:      "certs/foo",
 		Storage:   storage,
-		Data:      map[string]interface{}{"common_name": "sentry.lenstra.fr"},
+		Data:      map[string]interface{}{paramStringCommonName: "sentry.lenstra.fr"},
 	}
 	makeRequest(t, b, certReq, "This role does not exists.")
 
@@ -83,8 +83,8 @@ func checkCreatingCerts(t *testing.T, b logical.Backend, storage logical.Storage
 
 	// Try with alternate names
 	certReq.Data = map[string]interface{}{
-		"common_name":       "sentry.lenstra.fr",
-		"alternative_names": "grafana.lenstra.fr",
+		paramStringCommonName: "sentry.lenstra.fr",
+		paramStringAltNames:   "grafana.lenstra.fr",
 	}
 	first := makeRequest(t, b, certReq, "")
 	second := makeRequest(t, b, certReq, "")
@@ -101,7 +101,7 @@ func checkRenewingCert(t *testing.T, b logical.Backend, storage logical.Storage,
 		Operation: logical.RenewOperation,
 		Path:      "certs/lenstra.fr",
 		Storage:   storage,
-		Data:      map[string]interface{}{"common_name": "sentry.lenstra.fr"},
+		Data:      map[string]interface{}{paramStringCommonName: "sentry.lenstra.fr"},
 		Secret:    secret,
 	}
 	renewResp := makeRequest(t, b, certReq, "")
@@ -124,7 +124,7 @@ func checkRevokeCert(t *testing.T, b logical.Backend, storage logical.Storage, f
 	makeRequest(t, b, certReq, "")
 
 	// Check the cert status
-	a, err := getAccount(context.Background(), storage, "accounts/lenstra")
+	a, err := getAccount(context.Background(), storage, pathStringAccounts+"/lenstra")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,7 +137,7 @@ func checkRevokeCert(t *testing.T, b logical.Backend, storage logical.Storage, f
 	}
 
 	// Checking the OCSP status was not working for tests
-	err = client.Certificate.Revoke([]byte(second.Data["cert"].(string)))
+	err = client.Certificate.Revoke([]byte(second.Data[secretFieldCertificate].(string)))
 	if err == nil {
 		t.Fatalf("Trying to revoke the cert should have failed")
 	}
@@ -161,8 +161,8 @@ func checkCertificate(t *testing.T, resp *logical.Response) {
 	config.NextProtos = []string{"http/1.1"}
 
 	cert, err := tls.X509KeyPair(
-		[]byte(resp.Data["cert"].(string)),
-		[]byte(resp.Data["private_key"].(string)),
+		[]byte(resp.Data[secretFieldCertificate].(string)),
+		[]byte(resp.Data[secretFieldPrivateKey].(string)),
 	)
 	if err != nil {
 		t.Fatal(err)

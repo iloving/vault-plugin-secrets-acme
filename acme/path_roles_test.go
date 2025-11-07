@@ -12,7 +12,7 @@ func TestListRoles(t *testing.T) {
 
 	listReq := &logical.Request{
 		Operation: logical.ListOperation,
-		Path:      "roles",
+		Path:      pathStringRoles,
 		Storage:   config.StorageView,
 	}
 	listResp := makeRequest(t, b, listReq, "")
@@ -20,7 +20,7 @@ func TestListRoles(t *testing.T) {
 
 	makeRequest(t, b, &logical.Request{
 		Operation: logical.CreateOperation,
-		Path:      "accounts/lenstra",
+		Path:      pathStringAccounts + "/lenstra",
 		Storage:   config.StorageView,
 		Data: map[string]interface{}{
 			"server_url":              "https://localhost:14000/dir",
@@ -31,10 +31,10 @@ func TestListRoles(t *testing.T) {
 	}, "")
 	makeRequest(t, b, &logical.Request{
 		Operation: logical.CreateOperation,
-		Path:      "roles/lenstra",
+		Path:      pathStringRoles + "/lenstra",
 		Storage:   config.StorageView,
 		Data: map[string]interface{}{
-			"account": "lenstra",
+			paramStringAccount: "lenstra",
 		},
 	}, "")
 
