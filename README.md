@@ -8,6 +8,15 @@ This project is the latest in a succession of forks:
 * Forked with some updates:  https://github.com/Boostport/vault-plugin-secrets-acme
 * Forked again with more updates:  https://github.com/SierraSoftworks/vault-plugin-secrets-acme
 
+The plugin mimics how Vault PKI works, allowing it to be an (almost) drop in replacement for Vault PKI.  It is compatible with the basic _issue_ and _sign_ features of PKI, although both are handled by the same endpoint.
+
+Because of limitations with how LetsEncrypt works, there are certain options that are not possible:
+* only DNS and external IP SANs are supported.  Local IPs (eg: 127.0.0.1, 172.16.x.x, 192.168.0.x) will not work.
+* localhost is rejected by LetsEncrypt.
+
+The plugin works well enough that [cert-manager](https://cert-manager.io/) is successfully able to request certificates.
+
+
 ## Download Vault ACME
 Binary releases can be downloaded at https://github.com/iloving/vault-plugin-secrets-acme/releases.
 
@@ -45,8 +54,14 @@ Vault requires a checksum when registering a plugin. Instructions for obtaining 
 The below command registers the plugin under the alias name `acme`
 
 ```
-vault plugin register -command=vault-plugin-secrets-acme \
+vault plugin register -command=<filename_you_saved_plugin_as> \
 -sha256=<checksum> \
+secret <plugin_name> 
+```
+example:
+```
+vault plugin register -command=vault-plugin-secrets-acme \
+-sha256=$(sha256sum vault-plugin-secrets-acme| cut -d' ' -f1)
 secret acme 
 ```
 
@@ -61,7 +76,7 @@ vault plugin register -command=vault-plugin-secrets-acme \
 secret acmeN 
 ```
 
-## Usage
+## Configuration and Usage
 The documentation is available at [`USAGE.md`](./USAGE.md).
 
 ## Limitations/Bugs

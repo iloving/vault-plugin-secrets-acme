@@ -25,7 +25,7 @@ the ACME standard.
 When requesting a certificate to an ACME provider, the provider tries to validate
 that the user controls the domains names using challenges.
 
-The ACME plugin supports the DNS-01 challenge type.
+The ACME plugin supports the DNS-01 challenge type.  Other challenges still exist in the code base but they are deprecated.
 
 - **DNS-01 challenge:** the DNS-01 challenge confirms that you control the DNS
   for the domain name. This challenge is natively supported by the ACME secret
@@ -133,7 +133,7 @@ Your plugin should now be ready to dispense certificates.
 After the secrets engine is configured and a user/machine has a Vault token with
 the proper permission, it can generate credentials.
 
-Generate a new credential by writing to the `/certs` endpoint with the name
+Generate a new certificate by writing to the `/certs` endpoint with the name
 of the role:
 
     ```bash
@@ -144,19 +144,51 @@ of the role:
 ```bash
 $ vault write acme/certs/lenstra.fr common_name=www.lenstra.fr
 
-Key                Value
----                -----
-lease_id           acme/certs/lenstra.fr/A28ijF37fn9pFASIi58fonzz
-lease_duration     768h
-lease_renewable    true
-cert               -----BEGIN CERTIFICATE-----...
-domain             www.lenstra.fr
-issuer_cert        -----BEGIN CERTIFICATE-----...
-not_after          2020-01-24 15:57:02 +0000 UTC
-not_before         2019-10-26 15:57:02 +0000 UTC
-private_key        -----BEGIN RSA PRIVATE KEY-----...
-url                https://acme-v02.api.letsencrypt.org/acme/cert/03a6efdd6534b43c34e6935ca0702aed760f
+Key                 Value
+---                 -----
+lease_id            acme/certs/lenstra.fr/A28ijF37fn9pFASIi58fonzz
+lease_duration      20m
+lease_renewable     true
+ca_chain            [
+-----BEGIN CERTIFICATE-----
+...
+-----END CERTIFICATE-----
+]
+certificate         -----BEGIN CERTIFICATE-----...
+domain              test.gandersocial.ca
+expiration          1770333985
+issuing_ca          -----BEGIN CERTIFICATE-----...
+not_after           2026-02-05 23:26:25 +0000 UTC
+not_before          2025-11-07 23:26:26 +0000 UTC
+private_key         -----BEGIN RSA PRIVATE KEY-----...
+private_key_type    rsa
+serial_number       2c:78:a3:a5:52:17:6a:b2:7d:9e:16:77:81:15:12:71:2a:61
+url                 https://acme-staging-v02.api.letsencrypt.org/acme/cert/2c78a3a552176ab27d9e1677811512712a61
 ```
 
-The output will include a dynamically generated private key and certificate
-which corresponds to the given role.
+To use a CSR, add the `csr` option:
+```bash
+$ vault write acme/certs/lenstra.fr common_name=www.lenstra.fr csr=@wwwlenstrafr.csr
+Key                 Value
+---                 -----
+lease_id            acme/certs/lenstra.fr/A28ijF37fn9pFASIi58fonzz
+lease_duration      20m
+lease_renewable     true
+ca_chain            [
+-----BEGIN CERTIFICATE-----
+...
+-----END CERTIFICATE-----
+]
+certificate         -----BEGIN CERTIFICATE-----...
+domain              test.gandersocial.ca
+expiration          1770333985
+issuing_ca          -----BEGIN CERTIFICATE-----...
+not_after           2026-02-05 23:26:25 +0000 UTC
+not_before          2025-11-07 23:26:26 +0000 UTC
+private_key         n/a
+private_key_type    n/a
+serial_number       2c:78:a3:a5:52:17:6a:b2:7d:9e:16:77:81:15:12:71:2a:61
+url                 https://acme-staging-v02.api.letsencrypt.org/acme/cert/2c78a3a552176ab27d9e1677811512712a61
+```
+
+Notice that a private key is not generated as you would have already made your own when creating the CSR.
