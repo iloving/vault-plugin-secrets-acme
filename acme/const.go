@@ -20,6 +20,7 @@ const secretCertType = "cert"
 
 // Path strings
 const pathStringCerts = "certs"
+const pathStringIssue = "issue"
 const pathStringRoles = "roles"
 const pathStringAccounts = "accounts"
 

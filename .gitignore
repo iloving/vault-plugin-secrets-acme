@@ -146,3 +146,14 @@ website/assets/node_modules
 website/assets/public
 website/components/node_modules
 .github/copilot-instructions.md
+certmgr.sh
+pki_cert.yaml
+plugin_cert.yaml
+testcsr.conf
+testcsr.csr
+testcsr.key
+vault-dev.hcl
+vaultdev.log
+vaultdev.sh
+k/pki_issuer.yaml
+k/plugin_issuer.yaml
