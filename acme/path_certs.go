@@ -97,6 +97,7 @@ func (b *backend) certCreate(ctx context.Context, req *logical.Request, data *fr
 	if err != nil {
 		return nil, fmt.Errorf("failed to get cache key: %v", err)
 	}
+	b.Logger().Trace("Cache key generated: " + cacheKey)
 
 	var cert *certificate.Resource
 
@@ -208,23 +209,20 @@ func (b *backend) convertCSRDataToCertificateRequest(csrData []byte) (*x509.Cert
 	return certificateRequest, nil
 }
 func getCacheKey(r *role, data *framework.FieldData) (string, error) {
-	rolePath, err := json.Marshal(r)
+	// Build cache key from: role account, common name, alt names, and CSR
+	cacheData := map[string]interface{}{
+		"account":     r.Account,
+		"common_name": data.Get(paramStringCommonName),
+		"alt_names":   data.Get(paramStringAltNames),
+		"csr":         data.Get(paramStringCSR),
+	}
+
+	dataPath, err := json.Marshal(cacheData)
 	if err != nil {
-		return "", fmt.Errorf("failed to marshall role: %v", err)
+		return "", fmt.Errorf("failed to marshall cache data: %v", err)
 	}
 
-	d := make(map[string]interface{})
-	for key := range data.Schema {
-		d[key] = data.Get(key)
-	}
-	dataPath, err := json.Marshal(d)
-	if err != nil {
-		return "", fmt.Errorf("failed to marshall data: %v", err)
-	}
-
-	key := string(rolePath) + string(dataPath)
-	hashedKey := sha256.Sum256([]byte(key))
-
+	hashedKey := sha256.Sum256(dataPath)
 	return fmt.Sprintf("%s%x", cachePrefix, hashedKey), nil
 }
 
