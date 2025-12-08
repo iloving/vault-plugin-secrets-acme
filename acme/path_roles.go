@@ -35,7 +35,8 @@ func pathRoles(b *backend) []*framework.Path {
 					Type: framework.TypeBool,
 				},
 				paramStringDisableCache: {
-					Type: framework.TypeBool,
+					Type:    framework.TypeBool,
+					Default: false,
 				},
 				paramStringCacheForRatio: {
 					Type:    framework.TypeInt,
@@ -68,7 +69,7 @@ func (b *backend) roleCreateOrUpdate(ctx context.Context, req *logical.Request, 
 
 	cacheForRatio := data.Get(paramStringCacheForRatio).(int)
 	if cacheForRatio <= 0 || cacheForRatio > 100 {
-		return logical.ErrorResponse("cache_for_ration should be greater than 0 and less than 100"), nil
+		return logical.ErrorResponse("cache_for_ratio should be greater than 0 and less than 101"), nil
 	}
 
 	r := role{

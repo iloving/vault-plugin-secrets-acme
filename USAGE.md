@@ -68,14 +68,14 @@ The ACME plugin supports the DNS-01 challenge type.  Other challenges still exis
     secrets engine.
 
     ```bash
-    $ vault secrets tune -max-lease-ttl=<time_value> <secrets_path>
+    $ vault secrets tune -default-lease-ttl=<time_value> -max-lease-ttl=<time_value> <secrets_path>
     Success! Tuned the secrets engine at: secret_path/
     ```
 
     Let's Encrypt certificates are good for 90 days.  Best practice says to renew certificates before then, so you have time to investigate if the renewal fails.  We will set the expiry to 60 days.
 
     ```bash
-    $ vault secrets tune -max-lease-ttl=60d acme/
+    $ vault secrets tune -default-lease-ttl=30d -max-lease-ttl=60d acme/
     Success! Tuned the secrets engine at: acme/
     ```
 
