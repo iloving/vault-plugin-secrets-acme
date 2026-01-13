@@ -7,7 +7,7 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.4.0
 	github.com/hashicorp/go-hclog v1.6.3
 	github.com/hashicorp/vault/api v1.22.0
-	github.com/hashicorp/vault/sdk v0.20.0
+	github.com/hashicorp/vault/sdk v0.21.0
 	github.com/iloving/vault-plugin-secrets-acme/acme/sidecar v0.0.0-20251031160759-0def01df833c
 	github.com/stretchr/testify v1.11.1
 )
